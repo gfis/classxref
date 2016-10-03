@@ -1,0 +1,346 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<link rel="stylesheet" type="text/css" href="../stylesheets/style.css">
+<title>Classxref Task</title>
+</head>
+
+<body>
+
+<h2>Classxref</h2>
+<p>
+A task to generate Java class file crossreference listings in different formats.
+</p>
+
+<h3>Description</h3>
+<p>
+The classxref task takes the cache file of the optional Ant task <em>depend</em>
+and generates crossreference listings in several variations.
+</p>
+
+<p>The class dependencies are determined (with some limitations) by the <em>depend</em>
+ task (c.f. the description there).  
+They are stored in a file <em>dependencies.txt</em> by the <em>cache</em> option of that task.
+The <em>classxref</em> task takes this file and generates HTML, XML, SQL (drop/create/insert statements) 
+and Comma Separated Values (CSV) listings. 
+The listing can be sorted by the called classes
+(crossreference: where is a class used) or by the calling classes (reference of all imported classes).
+Furthermore, the sort order can use the fully qualified class name, or
+the trailing component of the classes name only. Standard classes like <tt>java.*</tt>
+or <tt>org.apache.*</tt> may be excluded from the listing.
+</p>
+<h3>Limitations</h3>
+
+<p> There are some source dependencies which <em>classxref</em> will not show
+(similiar to the <em>depend</em> task):</p>
+
+<ul>
+<li>If the Java compiler optimizes away a class relationship, 
+    there can be a source dependency without a class dependency. </li>
+    
+<li>Non public classes cause two problems. Firstly depend cannot relate
+    the class file to a source file. In the future this may be addressed
+    using the source file attribute in the classfile. Secondly, neither 
+    depend nor the compiler tasks can detect when a non public class is
+    missing. Inner classes are handled by the depend task.</li>
+</ul>
+
+The most obvious example of these limitations is that the task cannot
+show a dependency when a constant primitive data type exported 
+by other classes is changed. For example, dependency to something like
+<pre>
+public final class Constants {
+  public final static boolean DEBUG=false;
+}
+</pre> 
+will not be shown for other classes.
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">srcFile</td>
+    <td valign="top">This is the output of a <em>depend</em> task with attribute
+    <em>cache=</em>.</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">destFile</td>
+    <td valign="top">The destination file for the (cross-) reference listing</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">format</td>
+    <td valign="top">Output format. One of <tt>html</tt> (default), <tt>xml</tt> (for custom
+    listing formats), 
+    <tt>sql</tt> (to be loaded into a database table) or <tt>csv</tt> (for Excel etc.)</td>
+    <td valign="top" align="center">No</td>
+  </tr>
+  <tr>
+    <td valign="top">sort</td>
+    <td valign="top">This attribute controls how to show classnames, and how to order them (c.f. below). 
+    Case is relevant, default is "Dr"</td>
+    <td valign="top" align="center">No</td>
+  </tr>
+</table>
+<p>The <code>sort</code> attribute takes 2 letters from the table:
+<p><table border="1" cellpadding="2" cellspacing="0">
+	<tr><td><strong>D</strong></td><td>calle"d" class or "d"efinition, with     package name</td></tr>	
+	<tr><td><strong>d</strong></td><td>calle"d" class or "d"efinition, without  package name</td></tr>	
+	<tr><td><strong>R</strong></td><td>calle"r" class or "r"eference,  with     package name</td></tr>	
+	<tr><td><strong>r</strong></td><td>calle"r" class or "r"eference,  without  package name</td></tr>	
+	</table></p>
+<p>
+Thus <code>DR</code> gives a crossreference listing with fully qualified classnames,
+whereas <code>rd</code> would show the imports of classes with trailing names only.
+Other possibilities are <code>Dr, dr, RD, Rd ...<code>
+</p>
+
+<h3>Optional parameters specified as nested elements</h3>
+Nested <code>exclude</code> elements may be specified to exclude
+classes froms standard libraries, e.g. <code>java.*</code>.
+
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">pattern</td>
+    <td valign="top">This attribute is a prefix of the classnames to be excluded
+    from the listing, with a trailing dot and an optional trailing "*"</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+  </tr>
+</table>
+
+<h3>Example 1</h3>
+<xmp><depend srcdir="${java.dir}" destdir="${build.home}" cache="${build.home}"/>
+<classxref format="html" 
+	srcfile="${build.home}/dependencies.txt" destfile="${docs.home}/DDr_.html"/></xmp>
+<p>determines the dependencies with the <em>depend</em> task, and generates
+an HTML crossreference listing with short classnames. 
+The listing looks as follows:
+</p>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><td>
+<h2>Class Crossreference</h2>
+<h4>generated by org.apache.tools.ant.taskdefs.ClassXref at 2006-08-27 09:16:40 with sort="Dr"</h2>
+<dl>
+<dt><a name="HelloWorld" /><strong>HelloWorld</strong></dt><dd>
+ &lt; <a href="#HelloWorld$Message"><strong>HelloWorld$Message</strong></a></dd>
+<dt><a name="HelloWorld$Message" /><strong>HelloWorld$Message</strong></dt><dd>
+ &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="bug.PubStatField" />bug.<strong>PubStatField</strong></dt><dd>
+</dd>
+<dt><a name="bug.depend.UsePubStatField" />bug.depend.<strong>UsePubStatField</strong></dt><dd>
+</dd>
+<dt><a name="java.io.BufferedReader" />java.io.<strong>BufferedReader</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.io.File" />java.io.<strong>File</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.io.FileReader" />java.io.<strong>FileReader</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.io.FileWriter" />java.io.<strong>FileWriter</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.io.IOException" />java.io.<strong>IOException</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="java.io.PrintStream" />java.io.<strong>PrintStream</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a> &lt; <a href="#bug.depend.UsePubStatField"><strong>UsePubStatField</strong></a></dd>
+<dt><a name="java.io.PrintWriter" />java.io.<strong>PrintWriter</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.lang.Exception" />java.lang.<strong>Exception</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="java.lang.Object" />java.lang.<strong>Object</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref$Exclude"><strong>ClassXref$Exclude</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a> &lt; <a href="#HelloWorld$Message"><strong>HelloWorld$Message</strong></a> &lt; <a href="#bug.PubStatField"><strong>PubStatField</strong></a> &lt; <a href="#bug.depend.UsePubStatField"><strong>UsePubStatField</strong></a></dd>
+<dt><a name="java.lang.String" />java.lang.<strong>String</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="java.lang.StringBuffer" />java.lang.<strong>StringBuffer</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="java.lang.System" />java.lang.<strong>System</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a> &lt; <a href="#bug.depend.UsePubStatField"><strong>UsePubStatField</strong></a></dd>
+<dt><a name="java.text.SimpleDateFormat" />java.text.<strong>SimpleDateFormat</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.util.ArrayList" />java.util.<strong>ArrayList</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.util.Collections" />java.util.<strong>Collections</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.util.Date" />java.util.<strong>Date</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="java.util.Iterator" />java.util.<strong>Iterator</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="java.util.Vector" />java.util.<strong>Vector</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a> &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="org.apache.bcel.Repository" />org.apache.bcel.<strong>Repository</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.ClassParser" />org.apache.bcel.classfile.<strong>ClassParser</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.Constant" />org.apache.bcel.classfile.<strong>Constant</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.ConstantClass" />org.apache.bcel.classfile.<strong>ConstantClass</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.ConstantPool" />org.apache.bcel.classfile.<strong>ConstantPool</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.ConstantUtf8" />org.apache.bcel.classfile.<strong>ConstantUtf8</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.bcel.classfile.JavaClass" />org.apache.bcel.classfile.<strong>JavaClass</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.DependencyLister"><strong>DependencyLister</strong></a></dd>
+<dt><a name="org.apache.tools.ant.BuildException" />org.apache.tools.ant.<strong>BuildException</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="org.apache.tools.ant.Task" />org.apache.tools.ant.<strong>Task</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a> &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="org.apache.tools.ant.taskdefs.ClassXref" />org.apache.tools.ant.taskdefs.<strong>ClassXref</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref$Exclude"><strong>ClassXref$Exclude</strong></a></dd>
+<dt><a name="org.apache.tools.ant.taskdefs.ClassXref$Exclude" />org.apache.tools.ant.taskdefs.<strong>ClassXref$Exclude</strong></dt><dd>
+ &lt; <a href="#org.apache.tools.ant.taskdefs.ClassXref"><strong>ClassXref</strong></a></dd>
+<dt><a name="org.apache.tools.ant.taskdefs.DependencyLister" />org.apache.tools.ant.taskdefs.<strong>DependencyLister</strong></dt><dd>
+</dd></dl>
+</td></tr>
+</table>
+<p>The calling classes are linked to the entries where their callers are shown. 
+When the cursor moves over these links, the package of the class is visible in the
+browser's status line.
+</p>
+
+<h3>Example 2</h3>
+<xmp><depend .../>
+<classxref format="html" sort="dr"
+	srcfile= "${build.home}/dependencies.txt" destfile="${docs.home}/d_r_.html"><
+		<exclude pattern="java.*" />
+		<exclude pattern="org.apache.*" />
+</classxref></xmp>
+<p>generates an HTML crossreference listing with short classnames. 
+Classes from packages <em>java.*</em> and <em>org.apache.*</em> are excluded. 
+The corresponding listing for the same set of source files as in the previous example is:
+</p>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><td>
+<strong>...</strong>
+<dl>
+<dt><a name="HelloWorld" /><strong>HelloWorld</strong> in no package</dt><dd>
+ &lt; <a href="#HelloWorld$Message"><strong>HelloWorld$Message</strong></a></dd>
+<dt><a name="HelloWorld$Message" /><strong>HelloWorld$Message</strong> in no package</dt><dd>
+ &lt; <a href="#HelloWorld"><strong>HelloWorld</strong></a></dd>
+<dt><a name="bug.PubStatField" /><strong>PubStatField</strong> in package bug</dt><dd>
+</dd>
+<dt><a name="bug.depend.UsePubStatField" /><strong>UsePubStatField</strong> in package bug.depend</dt><dd>
+</dd></dl>
+</td></tr>
+</table>
+
+<h3>Example 3</h3>
+<xmp><depend ... />
+<classxref format="xml"	
+	srcfile= "${build.home}/dependencies.txt" destfile="${docs.home}/DDr_.xml"/></xmp>
+<p>generates
+an XML file, which can be further processed or transformed by an XSLT stylesheet:
+</p>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><td>
+<xmp><?xml version="1.0" encoding="utf-8" ?>
+<!-- Class Crossreference -->
+<classxref>
+	<description>generated by org.apache.tools.ant.taskdefs.ClassXref at 2006-08-27 09:16:40 with sort="Dr"</description>
+	<called pack="" name="HelloWorld">
+		<caller pack="" name="HelloWorld$Message" />
+	</called>
+	<called pack="" name="HelloWorld$Message">
+		<caller pack="" name="HelloWorld" />
+	</called>
+	<called pack="bug" name="PubStatField">
+	</called>
+	<called pack="bug.depend" name="UsePubStatField">
+	</called>
+	<called pack="java.io" name="BufferedReader">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+	</called>
+	<called pack="java.io" name="File">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+	</called>
+	<called pack="java.io" name="FileReader">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+	</called>
+	<called pack="java.io" name="FileWriter">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+	</called>
+	<called pack="java.io" name="IOException">
+		<caller pack="org.apache.tools.ant.taskdefs" name="DependencyLister" />
+	</called>
+	<called pack="java.io" name="PrintStream">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+		<caller pack="org.apache.tools.ant.taskdefs" name="DependencyLister" />
+		<caller pack="bug.depend" name="UsePubStatField" />
+	</called>
+	<called pack="java.io" name="PrintWriter">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+	</called>
+	<called pack="java.lang" name="Exception">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref" />
+		<caller pack="org.apache.tools.ant.taskdefs" name="DependencyLister" />
+	</called>
+	<called pack="java.lang" name="Object">
+		<caller pack="org.apache.tools.ant.taskdefs" name="ClassXref$Exclude" />
+		<caller pack="org.apache.tools.ant.taskdefs" name="DependencyLister" />
+		<caller pack="" name="HelloWorld$Message" />
+		<caller pack="bug" name="PubStatField" />
+		<caller pack="bug.depend" name="UsePubStatField" />
+	</called>
+
+...
+
+</classxref></xmp>
+</td></tr>
+</table>
+
+<h3>Example 4</h3>
+<xmp><depend ... />
+<classxref format="sql"
+	srcfile= "${build.home}/dependencies.txt" destfile="${docs.home}/DDr_.sql"/></xmp>
+<p>generates
+a file with SQL statements which can be used to create and fill a MySQL table, for example:
+</p>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><td>
+<xmp>-- generated by org.apache.tools.ant.taskdefs.ClassXref at 2006-08-27 09:16:40 with sort="Dr"
+DROP   TABLE classxref IF EXISTS;
+CREATE TABLE classxref
+  ( calledpack varchar(256)
+  , calledname varchar(256)
+  , calledname varchar(256)
+  , calledname varchar(256)
+  );
+INSERT into classxref VALUES ('','HelloWorld','','HelloWorld$Message');
+INSERT into classxref VALUES ('','HelloWorld$Message','','HelloWorld');
+INSERT into classxref VALUES ('java.io','BufferedReader','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.io','File','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.io','FileReader','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.io','FileWriter','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.io','IOException','org.apache.tools.ant.taskdefs','DependencyLister');
+INSERT into classxref VALUES ('java.io','PrintStream','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.io','PrintStream','org.apache.tools.ant.taskdefs','DependencyLister');
+INSERT into classxref VALUES ('java.io','PrintStream','bug.depend','UsePubStatField');
+INSERT into classxref VALUES ('java.io','PrintWriter','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.lang','Exception','org.apache.tools.ant.taskdefs','ClassXref');
+INSERT into classxref VALUES ('java.lang','Exception','org.apache.tools.ant.taskdefs','DependencyLister');
+INSERT into classxref VALUES ('java.lang','Object','org.apache.tools.ant.taskdefs','ClassXref$Exclude');
+INSERT into classxref VALUES ('java.lang','Object','org.apache.tools.ant.taskdefs','DependencyLister');
+INSERT into classxref VALUES ('java.lang','Object','','HelloWorld$Message');
+INSERT into classxref VALUES ('java.lang','Object','bug','PubStatField');
+INSERT into classxref VALUES ('java.lang','Object','bug.depend','UsePubStatField');
+...
+</xmp>
+</td></tr>
+</table>
+<hr>
+<p align="center">Copyright &copy; 2006 The Apache Software Foundation.
+All rights Reserved.</p>
+
+</body>
+</html>
+

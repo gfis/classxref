@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    @(#) $Id: build.xml 387 2010-03-29 06:38:33Z  $
+    2016-10-03: no tabs
+    2008-01-10: conventions of org.teherba
+    2006-08-15, Georg Fischer: for Apache ant
+-->
+<!--
+ * Copyright 2006 Dr. Georg Fischer <punctum at punctum dot kom>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
+<project name="classxref" default="all" basedir=".">
+    <property name="app.version"        value="1.5"/>
+    <property name="app.main-class"     value="org.apache.tools.ant.taskdefs.ClassXref"/>
+    <import file="build-import.xml" />
+
+    <property name="dep.file"           value="${build.home}/dependencies.txt"/>
+    <property name="bcel.home"          value="c:/pushare/Apache/bcel" />
+
+    <path id="bcel.classpath">
+        <fileset dir="${bcel.home}/BCEL">
+            <include name="bcel.jar"/>
+        </fileset>
+        <fileset dir="${bcel.home}/BCEL">
+            <include name="*.class"/>
+        </fileset>
+    </path>
+
+    <target name="generate" depends="" /><!-- gen.blz-->
+    <target name="test" depends="deploy,run" />
+
+    <!-- ============= postbat ==========================================
+        run the crossreferencer for a bigger project
+    -->
+    <target name="postbat">
+        <java classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpathref="compile.classpath" fork="true">
+            <arg value="c:/var/coba/postbat/build/dependencies.txt" />
+            <arg value="${build.home}/postbat.html" />
+        </java>
+    </target>
+
+    <!-- ============= class2html ==========================================
+        run some BCEL tool
+    -->
+    <target name="class2html">
+        <java classname="org.apache.bcel.util.Class2HTML"
+                classpath="${bcel.home}/bcel-5.2/bcel-5.2.jar" fork="true">
+            <arg value="${build.home}/classes/HelloWorld.class" />
+        </java>
+    </target>
+
+    <!-- ============= listclass ==========================================
+        run some BCEL tool
+    -->
+    <target name="listclass">
+        <java classname="listclass"
+                classpath="${bcel.home}/bcel/bcel.jar" fork="true">
+            <arg value="-dependencies" />
+            <arg value="${build.home}/classes/bug/depend/UsePubStatField.class" />
+        </java>
+        <java classname="listclass"
+                classpath="${bcel.home}/bcel/bcel.jar" fork="true">
+            <arg value="-dependencies" />
+            <arg value="${build.home}/classes/bug/PubStatField.class" />
+        </java>
+    </target>
+
+    <!-- ============= jasmin ==========================================
+        run the Jasmin disassembler of BCEL
+    -->
+    <target name="jasmin">
+        <java classname="JasminVisitor"
+                classpathref="bcel.classpath" fork="true">
+            <arg value="${build.home}/classes/bug/depend/UsePubStatField.class" />
+        </java>
+        <java classname="JasminVisitor"
+                classpathref="bcel.classpath" fork="true">
+            <arg value="${build.home}/classes/bug/PubStatField.class" />
+        </java>
+    </target>
+
+    <!-- ============= deps ==========================================
+        'listclass' rewritten for dependencies only
+    -->
+    <target name="deps">
+        <java classname="org.apache.tools.ant.taskdefs.DependencyLister"
+                classpathref="compile.classpath" fork="true">
+            <arg value="bug.depend.UsePubStatField" />
+        </java>
+        <java classname="org.apache.tools.ant.taskdefs.DependencyLister"
+                classpathref="compile.classpath" fork="true">
+            <arg value="bug.PubStatField" />
+        </java>
+        <java classname="org.apache.tools.ant.taskdefs.DependencyLister"
+                classpathref="compile.classpath" fork="true">
+            <arg value="org.apache.tools.ant.taskdefs.DependencyLister" />
+        </java>
+    </target>
+
+    <!-- ============= bug.depend ==========================================
+        shows the "bug/feature" in the Java Compilers; use as follows:
+        edit "1st value" in src/bug/PubStatField.java"
+        ant clean dist bug.depend - prints "1st value"
+        edit "2nd value" in src/bug/PubStatField.java"
+        ant       dist bug.depend - prints "1st value" - bug or feature?!
+    -->
+    <target name="bug.depend">
+        <java classname="bug.depend.UsePubStatField"
+                classpathref="compile.classpath" fork="true">
+            <arg value="" />
+        </java>
+    </target>
+
+    <!-- ============= run ==========================================
+        run the crossreference task with all output formats from the commandline
+    -->
+    <target name="run" depends="dist">
+        <java classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpathref="compile.classpath" fork="true">
+            <arg value="-f" /><arg value="csv" />
+            <arg value="${dep.file}" />
+            <arg value="${build.home}/classxref.csv" />
+        </java>
+        <java classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpathref="compile.classpath" fork="true">
+            <arg value="-f" /><arg value="html" />
+            <arg value="${dep.file}" />
+            <arg value="${build.home}/classxref.html" />
+        </java>
+        <java classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpathref="compile.classpath" fork="true">
+            <arg value="-f" /><arg value="sql" />
+            <arg value="-x" /><arg value="org.apache.*" />
+            <arg value="${dep.file}" />
+            <arg value="${build.home}/classxref_create.sql" />
+        </java>
+        <java classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpathref="compile.classpath" fork="true">
+            <arg value="-f" /><arg value="xml" />
+            <arg value="${dep.file}" />
+            <arg value="${build.home}/classxref.xml" />
+        </java>
+    </target>
+
+    <!-- ============= classxref =========================================
+        use the ant task to crossreference the own project for all formats
+    -->
+    <target name="classxref" description="Use the crossreference task" depends="dist">
+        <taskdef name="classxref"
+                classname="org.apache.tools.ant.taskdefs.ClassXref"
+                classpath="${dist.home}/${ant.project.name}.jar"/>
+        <antcall target="sub.xref"><param name="format" value="csv"  /></antcall>
+        <antcall target="sub.xref"><param name="format" value="html" /></antcall>
+        <antcall target="sub.xref"><param name="format" value="sql"  /></antcall>
+        <antcall target="sub.xref"><param name="format" value="xml"  /></antcall>
+    </target>
+
+    <target name="sub.xref">
+        <!-- crossreference the own project for sort = DR, Dr, dR, dr, RD, Rd, rD, rd -->
+        <!-- crude target filenames because Windows would clash "Dr.html" with "DR.html" -->
+        <classxref format="${format}" sort="DR"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/DDRR.${format}"
+                />
+        <classxref format="${format}" sort="Dr"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/DDr_.${format}"
+                />
+        <classxref format="${format}" sort="dR"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/d_RR.${format}"
+                >
+            <exclude pattern="java.*" />
+            <exclude pattern="org.apache.*" />
+        </classxref>
+        <classxref format="${format}" sort="dr"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/d_r_.${format}"
+                >
+            <exclude pattern="java.*" />
+            <exclude pattern="org.apache.*" />
+        </classxref>
+        <classxref format="${format}" sort="RD"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/RRDD.${format}"
+                />
+        <classxref format="${format}" sort="Rd"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/RRd_.${format}"
+                />
+        <classxref format="${format}" sort="rD"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/r_DD.${format}"
+                />
+        <classxref format="${format}" sort="rd"
+                srcfile= "${dep.file}"
+                destfile="${build.home}/r_d_.${format}"
+                />
+    </target>
+
+</project>

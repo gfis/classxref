@@ -1,0 +1,17 @@
+/*	numword.css - Cascaded Style Sheet
+	@(#) $Id: stylesheet.css 387 2010-03-29 06:38:33Z  $
+	2005-08-18: copied from html/gfis.css
+	2003-07-25:	body font-family
+	2003-03-22:	without HTML comments and tags
+	2000-11-20,	Georg Fischer
+*/
+body,p,h1,h2,h3,h4,dl,dd,dt,ul,ol,li,div,td,th,address,blockquote,nobr,b,i,a,br,img
+	{ font-family:Verdana,Arial,sans-serif; }
+dt	
+	{ font-weight: bold }
+tt
+	{ font-family:Courier; }
+td
+	{ vertical-align:top }
+body
+	{ background-color:white }
