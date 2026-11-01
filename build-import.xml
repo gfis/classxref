@@ -2,6 +2,7 @@
 <!--
     ant-buildfile for commandline, web application and web service
     @(#) $Id: build-import.xml 397 2010-04-16 20:12:31Z gfis $
+    2026-11-01: no axis, no jspc, +lib/bcel.jar
     2016-10-03: no tabs
     2010-06-01: empty before clean
     2010-04-13: jspc again
@@ -17,7 +18,7 @@
     2007-01-15: refactored for teherba
 -->
 <!--
- * Copyright 2007 Dr. Georg Fischer <punctum at punctum dot kom>
+ * Copyright 2007 Dr. Georg Fischer <dr dot georg dot fischer at gmail dot kom>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +60,10 @@
     <property name="test.home"          value="${basedir}/test" />
     <property name="javac.debug"        value="on" />
     <property name="javac.debuglevel"   value="lines,vars,source" />
-    <property name="jdk.version"        value="1.5" />
-
+    <property name="jdk.version"        value="1.6" />
+<!--
     <import file="${tomcat.home}/bin/catalina-tasks.xml"/>
-
+-->
     <path id="compile.classpath">
         <fileset dir="${dist.home}">
             <include name="*.jar"/>
@@ -74,9 +75,11 @@
         <fileset dir="${tomcat.home}/lib">
             <include name="*.jar"/>
         </fileset>
+    <!--
         <fileset dir="${axis.lib}">
             <include name="*.jar"/>
         </fileset>
+    -->
     </path>
 
     <!-- ============= all ==============================================
@@ -230,30 +233,36 @@
     <target name="manifest">
         <loadproperties srcFile="build.number" />
         <delete failonerror="false" file="${build.classes}/META-INF/MANIFEST.MF" />
-        <manifest file="${build.classes}/META-INF/MANIFEST.MF">
+        <manifest file="${etc.home}/META-INF/MANIFEST.MF">
             <attribute name="Built-By" value="${user.name}"/>
             <attribute name="Main-Class" value="${app.main-class}"/>
+            <!--Caution, the following are read by ../web/MetaInfPage.getVersionString, 
+                be careful with changing!
+                for appl-core.jar, the property ${core} must be set to "-core"
+                for appl.jar     , the property ${core} must be set to ""      
+            -->
             <section name="${ant.project.name}">
-                <attribute name="Specification-Title"       value="${ant.project.name}"/>
+                <attribute name="Specification-Title"       value="${ant.project.name}${core}"/>
                 <attribute name="Specification-Version"     value="${app.version} ${build.jdk}"/>
-                <attribute name="Specification-Vendor"      value="Dr. Georg Fischer"/>
-                <attribute name="Implementation-Title"      value="${ant.project.name}"/>
-                <attribute name="Implementation-Version"    value="${ant.project.name} ${build.number} ${build.date}"/>
-                <attribute name="Implementation-Vendor"     value="Dr. Georg Fischer"/>
+                <attribute name="Specification-Vendor"      value="Dr. Georg Fischer, D-79341 Kenzingen, Germany"/>
+                <attribute name="Implementation-Title"      value="teherba.org/${ant.project.name}${core}"/>
+                <attribute name="Implementation-Version"    value="${build.number} ${build.date}"/>
+                <attribute name="Implementation-Vendor"     value="www.teherba.org"/>
             </section>
         </manifest>
         <copy todir="${build.classes}/META-INF">
             <fileset dir="${etc.home}/META-INF">
-                <exclude name="**/*.bak"/>
+                <exclude name="**/*application.xml"/>
                 <include name="**/*"/>
             </fileset>
         </copy>
     </target>
 
+
     <!-- ============= dist ==============================================
         create the binary distributions: jar and war
     -->
-    <target name="dist"     depends="prepare,compile,jspc,manifest">
+    <target name="dist"     depends="prepare,compile,manifest"> <!-- jspc,manifest -->
         <jar  jarfile="${dist.home}/${ant.project.name}.jar" basedir="${build.classes}"
             manifest="${build.classes}/META-INF/MANIFEST.MF"
         />
@@ -267,7 +276,7 @@
 
     <!-- ============= (un-) deployment to Tomcat and Axis =====================
     -->
-    <target name="deploy" depends="dist,deploy.webapps,deploy.service" />
+    <target name="deploy" depends="dist,deploy.webapps" /> <!-- deploy.service -->
 
     <!-- Tomcat -->
     <target name="deploy.webapps" depends="dist">
@@ -280,7 +289,7 @@
         </copy>
     </target>
 
-    <!-- Axis -->
+<!-- Axis no longer supported
     <target name="deploy.service" >
         <copy todir="${axis.lib}">
             <fileset dir="${dist.home}">
@@ -293,7 +302,6 @@
         </java>
     </target>
 
-    <!-- Axis -->
     <target name="remote.service" >
         <scp todir="gfis@gfis.dataway.ch:/usr/local/tomcat/shared/lib" trust="yes"
                 password="${scp.password}" >
@@ -307,12 +315,6 @@
         </java>
     </target>
 
-    <target name="run">
-        <java classname="${class}" classpathref="compile.classpath" fork="true">
-            <arg line="${args}" />
-        </java>
-    </target>
-
     <target name="undeploy" depends="undeploy.service" />
 
     <target name="undeploy.service" >
@@ -320,7 +322,13 @@
             <arg line="-lhttp://localhost:${tomcat.port}/axis/services/AdminService etc/undeploy.wsdd" />
         </java>
     </target>
+-->
 
+    <target name="run">
+        <java classname="${class}" classpathref="compile.classpath" fork="true">
+            <arg line="${args}" />
+        </java>
+    </target>
 
     <!-- ============= javadoc ==========================================
     -->
